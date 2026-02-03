@@ -3,189 +3,178 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
 import { useAuth } from '../context/AuthContext'; 
 import {
-  Box,
-  Typography,
-  CircularProgress,
-  Button,
-  Paper,
-  Avatar, 
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
+  Box, Typography, CircularProgress, Button, Paper, Avatar, 
+  Divider, Grid, Chip, Stack, Tooltip
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
   Business as BusinessIcon,
-  Notes as NotesIcon
+  WhatsApp as WhatsAppIcon,
+  Assignment as ProjectIcon,
+  AttachMoney as MoneyIcon
 } from '@mui/icons-material';
+import AppLayout from "../layout/AppLayout"; 
 
-// Função para pegar as iniciais (mesma do Dashboard)
+// Gera uma cor hexadecimal única baseada no nome do cliente
+const stringToColor = (string) => {
+  let hash = 0;
+  if (!string) return '#30CFD0'; // Cor padrão caso a string seja vazia
+  
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+  return color;
+};
+
+// Extrai as iniciais do nome para o Avatar
 const getInitials = (name) => {
   if (!name) return '?';
-  const names = name.split(' ');
-  const initials = names.map(n => n[0]).join('');
-  return initials.length > 2 ? initials.substring(0, 2) : initials;
+  const names = name.trim().split(/\s+/);
+  if (names.length === 1) return names[0][0].toUpperCase();
+  return (names[0][0] + names[names.length - 1][0]).toUpperCase();
 };
 
 function ClientDetail() {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { id } = useParams(); // Pega o 'id' da URL
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { logout } = useAuth(); 
+  const { logout } = useAuth();
 
   useEffect(() => {
-    // Scroll para o topo ao carregar
     window.scrollTo(0, 0);
-
     const fetchClient = async () => {
       try {
-        // Busca o cliente específico
         const response = await api.get(`/clients/${id}`); 
         setClient(response.data);
       } catch (error) {
-        console.error('Erro ao buscar cliente:', error);
-        if (error.response && error.response.status === 401) {
-          logout();
-        }
+        if (error.response?.status === 401) logout();
       } finally {
         setLoading(false);
       }
     };
-
     fetchClient();
-  }, [id, logout]); 
+  }, [id, logout]);
 
-  const handleBack = () => {
-    navigate('/dashboard'); // Volta para o Dashboard
-  };
+  if (loading) return (
+    <AppLayout title="Carregando..."><Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box></AppLayout>
+  );
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      bgcolor: '#f0f2f5', // Fundo cinza consistente
-    }}>
-      <Box sx={{ pt: 4, pb: 4, px: 4 }}>
+    <AppLayout title={`Perfil: ${client?.name || 'Cliente'}`}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         
-        {/* Cabeçalho com Botão "Voltar" */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        {/* CABEÇALHO DE AÇÃO */}
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Button 
-            variant="outlined" 
-            onClick={handleBack} 
-            startIcon={<ArrowBackIcon />}
-            sx={{ 
-              color: '#30CFD0', 
-              borderColor: '#30CFD0', 
-              '&:hover': { 
-                borderColor: '#30CFD0',
-                bgcolor: 'rgba(48, 207, 208, 0.04)' 
-              } 
-            }}
+            startIcon={<ArrowBackIcon />} 
+            onClick={() => navigate(-1)}
+            sx={{ color: '#64748B', textTransform: 'none', fontWeight: 600 }}
           >
-            Voltar para o Dashboard
+            Voltar
           </Button>
+          <Stack direction="row" spacing={2}>
+            <Button variant="outlined" color="primary" sx={{ borderRadius: '10px', textTransform: 'none' }}>Editar Perfil</Button>
+          </Stack>
         </Box>
 
-        {/* Card de Detalhes do Cliente */}
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : !client ? (
-          <Paper sx={{ p: 3, borderRadius: '16px', textAlign: 'center' }}>
-            <Typography>Cliente não encontrado.</Typography>
-          </Paper>
-        ) : (
-          <Paper 
-            sx={{ 
-              p: { xs: 2, sm: 4 }, 
-              borderRadius: '16px', 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-            }}
-          >
-            {/* Secção de Identificação (Avatar e Nome) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                bgcolor: '#30CFD0', 
-                mr: 2, 
-                fontWeight: 'bold',
-                width: 56,
-                height: 56,
-                fontSize: '1.5rem'
-              }}>
-                {getInitials(client.name)}
-              </Avatar>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
-                  {client.name}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Divider sx={{ mb: 4 }} />
-
-            {/* Lista de Detalhes (Email, Telefone, Empresa) */}
-            <List sx={{ mb: 4 }}>
-              <ListItem>
-                <ListItemIcon sx={{ color: '#30CFD0' }}>
-                  <EmailIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Email" 
-                  secondary={client.email || 'Não informado'} 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon sx={{ color: '#30CFD0' }}>
-                  <PhoneIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Telefone" 
-                  secondary={client.phone || 'Não informado'} 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon sx={{ color: '#30CFD0' }}>
-                  <BusinessIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Empresa" 
-                  secondary={client.company || 'Não informado'} 
-                />
-              </ListItem>
-            </List>
-            
-            {/* Secção de "Notas" (para textos longos) */}
-            <Typography variant="h6" sx={{ color: '#30CFD0', fontWeight: 'bold', mb: 2 }}>
-              <NotesIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-              Notas
-            </Typography>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 2, 
-                bgcolor: '#fafafa', 
-                borderColor: '#eee', 
-                borderRadius: '12px',
-                minHeight: '100px'
-              }}
-            >
-              <Typography 
-                variant="body2" 
-                sx={{ color: '#555', whiteSpace: 'pre-wrap' }}
+        <Grid container spacing={3}>
+          {/* COLUNA ESQUERDA: Perfil e Contato */}
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', border: '1px solid #E2E8F0', textAlign: 'center' }}>
+              <Avatar 
+                sx={{ 
+                  bgcolor: stringToColor(client?.name || ''), 
+                  width: 100, height: 100, mx: 'auto', mb: 2, fontSize: '2rem', fontWeight: 800,
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                }}
               >
-                {client.notes || 'Nenhuma nota registada.'}
-              </Typography>
-            </Paper>
+                {getInitials(client?.name)}
+              </Avatar>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#1E293B' }}>{client?.name}</Typography>
+              <Chip 
+                label={client?.company || "Pessoa Física"} 
+                size="small" 
+                sx={{ mt: 1, bgcolor: '#F1F5F9', fontWeight: 600, color: '#475569' }} 
+              />
 
-          </Paper>
-        )}
+              <Divider sx={{ my: 3 }} />
+
+              <Stack spacing={2} sx={{ textAlign: 'left' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: '#EEF2FF', color: '#4F46E5', width: 32, height: 32 }}><EmailIcon sx={{ fontSize: 18 }} /></Avatar>
+                  <Typography variant="body2" sx={{ color: '#64748B', wordBreak: 'break-all' }}>{client?.email || 'N/A'}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: '#ECFDF5', color: '#10B981', width: 32, height: 32 }}><PhoneIcon sx={{ fontSize: 18 }} /></Avatar>
+                  <Typography variant="body2" sx={{ color: '#64748B' }}>{client?.phone || 'N/A'}</Typography>
+                </Box>
+              </Stack>
+
+              {client?.phone && (
+                <Button 
+                  fullWidth 
+                  variant="contained" 
+                  color="success" 
+                  startIcon={<WhatsAppIcon />}
+                  sx={{ mt: 4, borderRadius: '12px', py: 1.5, fontWeight: 700, textTransform: 'none', bgcolor: '#22C55E' }}
+                  onClick={() => window.open(`https://wa.me/${client.phone.replace(/\D/g,'')}`, '_blank')}
+                >
+                  Conversar agora
+                </Button>
+              )}
+            </Paper>
+          </Grid>
+
+          {/* COLUNA DIREITA: Métricas e Notas */}
+          <Grid item xs={12} md={8}>
+            <Stack spacing={3}>
+              {/* Cards de Resumo Rápido */}
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ bgcolor: '#FFF7ED', color: '#EA580C' }}><ProjectIcon /></Avatar>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800 }}>--</Typography>
+                      <Typography variant="caption" color="text.secondary">Projetos Realizados</Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ bgcolor: '#F0FDF4', color: '#16A34A' }}><MoneyIcon /></Avatar>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800 }}>R$ 0,00</Typography>
+                      <Typography variant="caption" color="text.secondary">Total Faturado</Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Notas */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  Observações Estratégicas
+                </Typography>
+                <Box sx={{ bgcolor: '#F8FAFC', p: 3, borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                  <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                    {client?.notes || "Nenhuma nota registrada para este parceiro."}
+                  </Typography>
+                </Box>
+              </Paper>
+            </Stack>
+          </Grid>
+        </Grid>
       </Box>
-    </Box>
+    </AppLayout>
   );
 }
 

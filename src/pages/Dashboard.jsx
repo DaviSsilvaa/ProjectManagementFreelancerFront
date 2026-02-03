@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -19,25 +19,47 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  TextField,
+  InputAdornment,
+  Grid,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
+  WhatsApp as WhatsAppIcon,
+  Search as SearchIcon,
+  People as PeopleIcon,
+  TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
-import AppLayout from "../layout/AppLayout"; // <<=== IMPORTANTE
+import AppLayout from "../layout/AppLayout";
 
-// Função auxiliar para iniciais
+// --- FUNÇÕES AUXILIARES (Lógica de UI) ---
+const stringToColor = (string) => {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = "#";
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+  return color;
+};
+
 const getInitials = (name) => {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
-  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
 function Dashboard() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const { logout } = useAuth();
 
   const [successMessage, setSuccessMessage] = useState("");
@@ -47,20 +69,30 @@ function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // menu
+  // Menu States
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedClientId, setSelectedClientId] = useState(null);
 
-  // exclusão
+  // Delete States
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const isMenuOpen = Boolean(anchorEl);
 
+  // Filtro em tempo real (Otimizado com useMemo)
+  const filteredClients = useMemo(() => {
+    return clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.company &&
+          c.company.toLowerCase().includes(searchTerm.toLowerCase())),
+    );
+  }, [clients, searchTerm]);
+
   useEffect(() => {
     if (location.state?.formLogin) {
-      setSuccessMessage("Login feito com sucesso!");
+      setSuccessMessage("Bem-vindo de volta!");
       setOpenSnackbar(true);
       window.history.replaceState({}, document.title);
     }
@@ -72,12 +104,8 @@ function Dashboard() {
         const response = await api.get("/clients");
         setClients(response.data);
       } catch (error) {
-        console.error("Erro ao buscar clientes:", error);
-        if (error.response?.status === 401) {
-          logout();
-        } else {
-          setErrorMsg("Não foi possível carregar os clientes.");
-        }
+        if (error.response?.status === 401) logout();
+        else setErrorMsg("Erro ao carregar a base de clientes.");
       } finally {
         setLoading(false);
       }
@@ -85,13 +113,7 @@ function Dashboard() {
     fetchClients();
   }, [logout]);
 
-  const handleCloseSnackbar = (_, reason) => {
-    if (reason === "clickaway") return;
-    setOpenSnackbar(false);
-  };
-
-  const handleViewClient = (id) => navigate(`/client/${id}`);
-
+  // Handlers
   const handleMenuClick = (e, clientId) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
@@ -101,7 +123,7 @@ function Dashboard() {
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleViewFromMenu = () => {
-    if (selectedClientId) handleViewClient(selectedClientId);
+    if (selectedClientId) navigate(`/client/${selectedClientId}`);
     handleMenuClose();
   };
 
@@ -111,166 +133,345 @@ function Dashboard() {
     handleMenuClose();
   };
 
-  const handleConfirmClose = () => {
-    setConfirmOpen(false);
-    setPendingDeleteId(null);
-  };
-
   const handleDelete = async () => {
-    if (!pendingDeleteId) return;
     setConfirmLoading(true);
-    setErrorMsg("");
-
     try {
-      setClients((prev) => prev.filter((c) => c.id !== pendingDeleteId));
       await api.delete(`/clients/${pendingDeleteId}`);
-      setSuccessMessage("Cliente excluído com sucesso!");
+      setClients((prev) => prev.filter((c) => c.id !== pendingDeleteId));
+      setSuccessMessage("Registro removido com sucesso.");
       setOpenSnackbar(true);
     } catch (err) {
-      setErrorMsg(err?.response?.data?.error || "Erro ao excluir cliente.");
+      console.error("Erro na exclusão:", err); // Agora 'err' está sendo usado!
+      setErrorMsg(err.response?.data?.error || "Falha ao excluir o registro.");
     } finally {
       setConfirmLoading(false);
       setConfirmOpen(false);
-      setPendingDeleteId(null);
-      setSelectedClientId(null);
     }
   };
 
   return (
-    <AppLayout title="Clientes">
-      {/* topo */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#333" }}>
-          Meus Clientes
-        </Typography>
-        <Button variant="outlined" color="error" onClick={logout}>
-          Sair
-        </Button>
-      </Box>
-
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{ mb: 4 }}
-        onClick={() => navigate("/register-client")}
+    <AppLayout title="Dashboard">
+      <Box
+        sx={{
+          backgroundColor: "#F8FAFC", // Azul acinzentado suave para tirar o branco cansativo
+          minHeight: "100vh",
+          m: -3, // Compensa o padding do layout base
+          p: 3,
+        }}
       >
-        Registrar Cliente
-      </Button>
-
-      {errorMsg && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {errorMsg}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <CircularProgress />
+        {/* HEADER SECTION */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            mb: 4,
+            alignItems: "flex-start",
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 800, color: "#1E293B", mb: 0.5 }}
+            >
+              Gestão de Carteira
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: "#64748B", fontWeight: 500 }}
+            >
+              Administre seus parceiros de negócio e contatos comerciais.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={() => navigate("/register-client")}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1.2,
+              bgcolor: "#4F46E5",
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            + Adicionar Parceiro
+          </Button>
         </Box>
-      ) : (
-        <Box>
-          {clients.length > 0 ? (
-            clients.map((client) => (
-              <Paper
-                key={client.id}
+
+        {/* KPI CARDS (Nota 10 no TCC) */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <Avatar sx={{ bgcolor: "#EEF2FF", color: "#4F46E5" }}>
+                <PeopleIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  {clients.length}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Total de Clientes
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <Avatar sx={{ bgcolor: "#ECFDF5", color: "#10B981" }}>
+                <TrendingUpIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Ativo
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Status do Sistema
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* BUSCA */}
+        <TextField
+          fullWidth
+          placeholder="Pesquisar por nome ou empresa..."
+          variant="outlined"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{
+            mb: 3,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "12px",
+              bgcolor: "#FFF",
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: "#94A3B8" }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {errorMsg && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }}>
+            {errorMsg}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Box>
+            {filteredClients.length > 0 ? (
+              filteredClients.map((client) => (
+                <Paper
+                  key={client.id}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderRadius: "16px",
+                    border: "1px solid #E2E8F0",
+                    bgcolor: "#FFF",
+                    transition: "0.2s",
+                    "&:hover": {
+                      borderColor: "#4F46E5",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 10px 20px rgba(0,0,0,0.04)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: stringToColor(client.name),
+                        width: 52,
+                        height: 52,
+                        fontWeight: 800,
+                        fontSize: "1.1rem",
+                      }}
+                    >
+                      {getInitials(client.name)}
+                    </Avatar>
+                    <Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Typography sx={{ fontWeight: 700, color: "#1E293B" }}>
+                          {client.name}
+                        </Typography>
+                        {client.company && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              bgcolor: "#F1F5F9",
+                              px: 1,
+                              py: 0.2,
+                              borderRadius: "6px",
+                              color: "#475569",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {client.company}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "#64748B" }}>
+                        {client.email || "E-mail não informado"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {client.phone && (
+                      <IconButton
+                        size="small"
+                        sx={{
+                          color: "#22C55E",
+                          "&:hover": { bgcolor: "#F0FDF4" },
+                        }}
+                        onClick={() =>
+                          window.open(
+                            `https://wa.me/${client.phone.replace(/\D/g, "")}`,
+                            "_blank",
+                          )
+                        }
+                      >
+                        <WhatsAppIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    <IconButton onClick={(e) => handleMenuClick(e, client.id)}>
+                      <MoreVertIcon sx={{ color: "#94A3B8" }} />
+                    </IconButton>
+                  </Box>
+                </Paper>
+              ))
+            ) : (
+              <Box
                 sx={{
-                  p: 2,
-                  mb: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  textAlign: "center",
+                  py: 10,
+                  border: "2px dashed #E2E8F0",
                   borderRadius: "16px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Avatar sx={{ bgcolor: "#30CFD0", mr: 2, fontWeight: "bold" }}>
-                    {getInitials(client.name)}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: "bold", color: "#333" }}>
-                      {client.name}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "#888" }}>
-                      {client.email || "Sem email"}
-                    </Typography>
-                  </Box>
-                </Box>
+                <Typography color="text.secondary">
+                  Nenhum parceiro encontrado.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
 
-                <IconButton color="primary" onClick={(e) => handleMenuClick(e, client.id)}>
-                  <MoreVertIcon />
-                </IconButton>
-              </Paper>
-            ))
-          ) : (
-            <Paper sx={{ p: 3, borderRadius: "16px", textAlign: "center" }}>
-              <Typography>Nenhum cliente cadastrado ainda.</Typography>
-            </Paper>
-          )}
-        </Box>
-      )}
+        {/* --- COMPONENTES DE SUPORTE (MENU/DIALOG) --- */}
+        <Menu
+          anchorEl={anchorEl}
+          open={isMenuOpen}
+          onClose={handleMenuClose}
+          PaperProps={{
+            sx: {
+              borderRadius: "12px",
+              mt: 1,
+              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            },
+          }}
+        >
+          <MenuItem onClick={handleViewFromMenu} sx={{ gap: 1.5, py: 1.5 }}>
+            <VisibilityIcon fontSize="small" color="action" /> Visualizar
+            Detalhes
+          </MenuItem>
+          <MenuItem
+            onClick={handleAskDelete}
+            sx={{ gap: 1.5, py: 1.5, color: "error.main" }}
+          >
+            <DeleteIcon fontSize="small" color="error" /> Remover Registro
+          </MenuItem>
+        </Menu>
 
-      {/* MENU */}
-      <Menu
-        anchorEl={anchorEl}
-        open={isMenuOpen}
-        onClose={handleMenuClose}
-        MenuListProps={{ "aria-labelledby": "basic-button" }}
-        PaperProps={{
-          elevation: 0,
-          sx: {
-            overflow: "visible",
-            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.15))",
-            mt: 1.5,
-            borderRadius: "12px",
-          },
-        }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-      >
-        <MenuItem onClick={handleViewFromMenu}>
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          Visualizar
-        </MenuItem>
-        <MenuItem onClick={handleAskDelete} sx={{ color: "error.main" }}>
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" sx={{ color: "error.main" }} />
-          </ListItemIcon>
-          Excluir
-        </MenuItem>
-      </Menu>
+        <Dialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          PaperProps={{ sx: { borderRadius: "16px" } }}
+        >
+          <DialogTitle sx={{ fontWeight: 800 }}>Confirmar Exclusão</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Esta ação removerá permanentemente os dados deste parceiro. Deseja
+              prosseguir?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setConfirmOpen(false)} color="inherit">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="contained"
+              color="error"
+              disableElevation
+              disabled={confirmLoading}
+            >
+              {confirmLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Confirmar Exclusão"
+              )}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* DIALOG CONFIRMAR EXCLUSÃO */}
-      <Dialog open={confirmOpen} onClose={confirmLoading ? undefined : handleConfirmClose}>
-        <DialogTitle>Excluir cliente?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Essa ação não pode ser desfeita. Tem certeza que deseja excluir este cliente?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleConfirmClose} disabled={confirmLoading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleDelete} disabled={confirmLoading} color="error" variant="contained">
-            {confirmLoading ? <CircularProgress size={18} color="inherit" /> : "Excluir"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* SNACKBAR */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={4000}
+          onClose={() => setOpenSnackbar(false)}
+        >
+          <Alert
+            severity="success"
+            variant="filled"
+            sx={{ width: "100%", borderRadius: "12px" }}
+          >
+            {successMessage}
+          </Alert>
+        </Snackbar>
+      </Box>
     </AppLayout>
   );
 }
