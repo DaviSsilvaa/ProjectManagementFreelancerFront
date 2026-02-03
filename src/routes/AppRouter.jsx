@@ -7,6 +7,7 @@ import ClientDetail from '../pages/ClientDetail.jsx';
 import RegisterClient from '../pages/RegisterClient.jsx';
 import DashboardCharts from '../pages/DashboardCharts.jsx';
 import Projects from '../pages/Projects.jsx';
+import ProjectDetails from '../pages/ProjectDetails.jsx';
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -76,6 +77,24 @@ export default function AppRouter() {
         element={
           <PrivateRoute>
             <Projects />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/projects"
+        element={
+          <PrivateRoute>
+            <Projects />
+          </PrivateRoute>
+        }
+      />
+      
+      <Route
+        path="/projects/:id"
+        element={
+          <PrivateRoute>
+            <ProjectDetails />
           </PrivateRoute>
         }
       />
