@@ -1,238 +1,242 @@
-/*
-  ESTE É O ESTILO COM A BOX DE LOGIN COMO NA IMAGEM ENVIADA
-  (Neumorphism + Gradiente Lateral)
-*/
 /* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  TextField,
-  Button,
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Paper,
-  SvgIcon, // Para o ícone da bolsa de compras
-  IconButton, // Para botões de ícone das redes sociais
+  TextField, Button, Box, Typography, CircularProgress,
+  Alert, Paper, InputAdornment, IconButton
 } from '@mui/material';
+import { 
+  Email as EmailIcon, Lock as LockIcon, 
+  Visibility, VisibilityOff 
+} from '@mui/icons-material';
 import { Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion'; //
 
+const LOGIN_FIELD_STYLE = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '15px',
+    bgcolor: '#F8FAFC',
+    transition: 'all 0.2s ease',
+    '& fieldset': { borderColor: 'transparent' },
+    '&:hover': { bgcolor: '#F1F5F9' },
+    '&.Mui-focused': {
+      bgcolor: '#FFFFFF',
+      '& fieldset': { borderColor: '#4F46E5', borderWidth: '2px' },
+    },
+  },
+  '& .MuiInputLabel-root': { fontWeight: 600, color: '#94A3B8' },
+};
+
+// Variantes de animação para reutilizar
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6 }
+};
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login, token } = useAuth();
-
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true); 
     try {
-
-      await delay(2000);
-
-
       await login(email, password);
-
     } catch (err) {
-      setError('Email ou senha inválidos. Tente novamente.');
+      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (token) {
-    return <Navigate to="/dashboard" replace state={{formLogin: true}} />;
-  }
+  if (token) return <Navigate to="/dashboard" replace />;
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-        // Fundo branco da página, como na imagem
-        bgcolor: '#8f97a0ff',
+  <Box
+    sx={{
+      minHeight: '100vh',
+      width: '100vw',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: 2,
+      position: 'relative',
+      overflow: 'hidden',
+      // FUNDO: Grid Geométrico Visível
+      backgroundColor: '#F8FAFC',
+      backgroundImage: `
+        linear-gradient(rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(203, 213, 225, 0.4) 1px, transparent 1px)
+      `,
+      backgroundSize: '45px 45px',
+    }}
+  >
+    {/* 1. BOLHA ANIMADA SUPERIOR (ROXA) */}
+    <motion.div
+      animate={{ 
+        scale: [1, 1.2, 1],
+        x: [-30, 30, -30],
+        opacity: [0.4, 0.6, 0.4] 
       }}
+      transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      style={{
+        position: 'absolute', top: '5%', left: '5%',
+        width: '500px', height: '500px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 70%)',
+        filter: 'blur(70px)',
+        zIndex: 0,
+      }}
+    />
+
+    {/* 2. BOLHA ANIMADA INFERIOR (AZUL) */}
+    <motion.div
+      animate={{ 
+        scale: [1, 1.3, 1],
+        x: [30, -30, 30],
+        opacity: [0.3, 0.5, 0.3] 
+      }}
+      transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+      style={{
+        position: 'absolute', bottom: '5%', right: '5%',
+        width: '600px', height: '600px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%)',
+        filter: 'blur(90px)',
+        zIndex: 0,
+      }}
+    />
+
+    {/* 3. CARD DE LOGIN PRINCIPAL */}
+    <motion.div
+      initial={{ y: 40, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      style={{ zIndex: 1, width: '100%', maxWidth: '1100px' }}
     >
       <Paper
-        elevation={10} // Sombra forte para o "card" principal
+        elevation={0}
         sx={{
           display: 'flex',
-          borderRadius: '30px', // Cantos arredondados do card grande
-          overflow: 'hidden', // Importante para o gradiente da esquerda
-          maxWidth: '1200px', // A largura total do seu componente
-          width: '100%',
-          minHeight: { xs: 'auto', md: '600px' }, // Altura mínima para desktop
-          boxShadow: '2px 14px 11px rgba(0, 0, 0, 0.1)', // Sombra mais sutil
+          borderRadius: '30px',
+          overflow: 'hidden',
+          minHeight: '620px',
+          bgcolor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)', // Efeito de vidro
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.8)'
         }}
       >
-        {/* Lado Esquerdo: "Welcome Page" com gradiente */}
+        {/* LADO ESQUERDO: SEÇÃO DE BOAS-VINDAS */}
         <Box
           sx={{
-            width: { xs: '100%', md: '45%' }, // 45% da largura total em desktop
-            display: { xs: 'none', md: 'flex' }, // Esconde em telas pequenas
+            width: { xs: '100%', md: '45%' },
+            display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
-            justifyContent: 'space-between', // Para posicionar icones e texto
-            alignItems: 'flex-start',
-            p: 6, // Padding grande
-            // Gradiente verde/azul como na imagem
-            background: 'linear-gradient(135deg, #63737cff 0%, #65baebff 100%)',
-            position: 'relative',
+            justifyContent: 'center',
+            p: 6,
+            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
             color: 'white',
+            position: 'relative'
           }}
         >
-          <Box
-            sx={{
-              position: 'absolute',
-              width: '180px',
-              height: '180px',
-              borderRadius: '30px',
-              bgcolor: 'rgba(255,255,255,0.2)',
-              left: '-50px',
-              top: '10%',
-              transform: 'rotate(-20deg)',
-              zIndex: 0,
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              width: '150px',
-              height: '150px',
-              borderRadius: '30px',
-              bgcolor: 'rgba(255,255,255,0.2)',
-              right: '-30px',
-              bottom: '20%',
-              transform: 'rotate(10deg)',
-              zIndex: 0,
-            }}
-          />
-
-
-          {/* Texto "Welcome Page" */}
-          <Box sx={{ mt: 'auto', zIndex: 1 }}> {/* Usa mt: 'auto' para empurrar para baixo */}
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Welcome Page
+          <Box sx={{ zIndex: 1 }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, mb: 2, letterSpacing: '-2.5px' }}>
+              FREELA.SYS
             </Typography>
-            <Typography variant="subtitle1">
-              Sign in to continue access pages
+            <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, lineHeight: 1.4, maxWidth: '320px' }}>
+              Gerencie seus projetos e clientes com inteligência de dados em tempo real.
             </Typography>
           </Box>
+          
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+            style={{ 
+              position: 'absolute', width: '250px', height: '250px', 
+              borderRadius: '60px', border: '2px solid rgba(255,255,255,0.08)', 
+              top: '-80px', left: '-80px' 
+            }}
+          />
         </Box>
 
-        {/* Lado Direito: Formulário de Login */}
-        <Box
-          sx={{
-            width: { xs: '100%', md: '55%' }, // 55% da largura total em desktop
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            p: { xs: 4, sm: 6, md: 8 }, // Padding responsivo
-            bgcolor: 'white',
-            borderRadius: { xs: '30px', md: '0 30px 30px 0' }, // Arredondado em telas pequenas, e apenas na direita em desktop
-          }}
-        >
-          <Typography component="h1" variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: '#333' }}>
-            Sign In
-          </Typography>
-          <Typography variant="subtitle2" sx={{ mb: 4, color: '#888' }}>
-            Sign in to continue access pages
-          </Typography>
+        {/* LADO DIREITO: FORMULÁRIO */}
+        <Box sx={{ 
+          width: { xs: '100%', md: '55%' }, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          p: { xs: 4, md: 8 }, 
+          bgcolor: 'white' 
+        }}>
+          
+          <Box sx={{ textAlign: 'center', mb: 5, width: '100%' }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: '#1E293B', mb: 1 }}>Login</Typography>
+            <Typography variant="body2" sx={{ color: '#64748B' }}>Bem-vindo de volta</Typography>
+          </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
-              {error}
-            </Alert>
-          )}
+          {error && <Alert severity="error" sx={{ mb: 3, width: '100%', borderRadius: '15px' }}>{error}</Alert>}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 1 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
             <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoFocus
-              variant="outlined" // Use outlined ou filled para este estilo
-              sx={{
-                borderRadius: '15px', // Cantos arredondados
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '15px',
-                  bgcolor: '#f0f2f5', // Fundo levemente cinza, como na imagem
-                  '& fieldset': { borderColor: 'transparent' }, // Sem borda visível
-                  '&:hover fieldset': { borderColor: 'transparent' },
-                  '&.Mui-focused fieldset': { borderColor: '#6aa5ddff' }, // Borda verde no foco
-                },
-                mb: 2,
+              margin="normal" required fullWidth label="E-mail"
+              sx={LOGIN_FIELD_STYLE}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: '#94A3B8' }} /></InputAdornment>,
               }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            
             <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              variant="outlined"
-              sx={{
-                borderRadius: '15px',
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '15px',
-                  bgcolor: '#f0f2f5',
-                  '& fieldset': { borderColor: 'transparent' },
-                  '&:hover fieldset': { borderColor: 'transparent' },
-                  '&.Mui-focused fieldset': { borderColor: '#6aa5ddff' },
-                },
-                mb: 3,
+              margin="normal" required fullWidth label="Senha"
+              type={showPassword ? 'text' : 'password'}
+              sx={LOGIN_FIELD_STYLE}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: '#94A3B8' }} /></InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
             <Button
+              component={motion.button}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               fullWidth
               variant="contained"
               disabled={loading}
               sx={{
-                mt: 1,
-                mb: 3,
-                py: 1.8, // Botão mais alto
-                borderRadius: '15px', // Cantos arredondados
-                background: 'linear-gradient(90deg, #727574ff 0%, #89b6e0ff 100%)', // Gradiente no botão
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                boxShadow: 'none', // Remove a sombra padrão para o Neumorphism
-                '&:hover': {
-                  opacity: 0.9,
-                  boxShadow: 'none',
-                },
+                mt: 5, mb: 2, py: 2.2, borderRadius: '18px',
+                background: 'linear-gradient(90deg, #4F46E5 0%, #6366F1 100%)',
+                fontWeight: 900, fontSize: '1rem',
+                boxShadow: '0 10px 20px rgba(79, 70, 229, 0.2)'
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'CONTINUE'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'ENTRAR NO SISTEMA'}
             </Button>
           </Box>
-
-
         </Box>
       </Paper>
-    </Box>
-  );
+    </motion.div>
+  </Box>
+);
 }
 
 export default Login;

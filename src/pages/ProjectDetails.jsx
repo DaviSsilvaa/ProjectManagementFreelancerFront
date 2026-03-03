@@ -14,7 +14,8 @@ import {
   Breadcrumbs,
   Link,
   Snackbar,
-  Alert
+  Alert,
+  Chip,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -193,233 +194,132 @@ export default function ProjectDetails() {
     );
 
   return (
-    <AppLayout title={`Detalhes: ${project?.title}`}>
+    <AppLayout title={`Gestão de Projeto: ${project?.title}`}>
       <Box sx={{ width: "100%", px: { xs: 2, md: 4 }, py: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
+        
+        {/* 1. CABEÇALHO E NAVEGAÇÃO (BREADCRUMBS) */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 4 }}>
           <Box>
             <Breadcrumbs sx={{ mb: 1 }}>
-              <Link
-                underline="hover"
-                color="inherit"
-                onClick={() => navigate("/dashboard/projects")}
-                sx={{ cursor: "pointer" }}
+              <Link 
+                underline="hover" 
+                color="inherit" 
+                onClick={() => navigate("/projects")} 
+                sx={{ cursor: "pointer", fontWeight: 500 }}
               >
                 Projetos
               </Link>
-              <Typography color="text.primary" sx={{ fontWeight: 700 }}>
-                {project?.title}
-              </Typography>
+              <Typography color="text.primary" sx={{ fontWeight: 700 }}>Detalhes do Contrato</Typography>
             </Breadcrumbs>
-            <Typography variant="h4" sx={{ fontWeight: 900, color: "#0F172A" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#0F172A", letterSpacing: '-1px' }}>
               {project?.title}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<EditIcon />}
-            sx={{ bgcolor: "#1E293B", borderRadius: "10px", fontWeight: 700 }}
-          >
-            Editar Projeto
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button 
+              onClick={() => generateProjectPDF(project, aiResult)} 
+              variant="outlined" 
+              sx={{ borderRadius: "10px", fontWeight: 700, textTransform: 'none', borderColor: '#E2E8F0', color: '#1E293B' }}
+            >
+              Exportar Relatório PDF
+            </Button>
+            <Button 
+              variant="contained" 
+              startIcon={<EditIcon />} 
+              sx={{ bgcolor: "#4F46E5", borderRadius: "10px", fontWeight: 700, textTransform: 'none', '&:hover': { bgcolor: '#4338CA' } }}
+            >
+              Editar Escopo
+            </Button>
+          </Stack>
         </Box>
 
-        {/* 1. GRID DE RESUMO (Ocupa a largura total) */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            mb: 3,
-            borderRadius: "16px",
-            border: "1px solid #E2E8F0",
-            bgcolor: "#FFF",
-          }}
-        >
-          <Grid container spacing={4}>
-            <Grid item xs={12} sm={4}>
-              <Typography
-                variant="caption"
-                sx={{ color: "#94A3B8", fontWeight: 800 }}
-              >
-                ORÇAMENTO TOTAL
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                {formatBRL(project?.budget)}
-              </Typography>
+        {/* 2. DASHBOARD DE INDICADORES (KPIs) */}
+        <Paper elevation={0} sx={{ p: 3, mb: 4, borderRadius: "20px", border: "1px solid #E2E8F0", bgcolor: "#FFF" }}>
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, display: 'block', mb: 0.5 }}>VALOR DO CONTRATO</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: '#10B981' }}>{formatBRL(project?.budget)}</Typography>
             </Grid>
-            <Grid item xs={12} sm={4}>
-              <Typography
-                variant="caption"
-                sx={{ color: "#94A3B8", fontWeight: 800 }}
-              >
-                CLIENTE RELACIONADO
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {project?.client?.name || "Não vinculado"}
-              </Typography>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, display: 'block', mb: 0.5 }}>PARCEIRO COMERCIAL</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 700, color: '#1E293B' }}>{project?.client?.name || "Cliente não vinculado"}</Typography>
             </Grid>
-            <Grid
-              item
-              xs={12}
-              sm={4}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: { sm: "flex-end" },
-              }}
-            >
-              <Box
-                sx={{
-                  px: 3,
-                  py: 1,
-                  borderRadius: "8px",
-                  bgcolor: "rgba(245, 158, 11, 0.1)",
-                  border: "1px solid #F59E0B",
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: "#B45309", fontWeight: 800 }}
-                >
-                  {project?.status?.toUpperCase()}
-                </Typography>
-              </Box>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, display: 'block', mb: 0.5 }}>DATA DE ABERTURA</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 700 }}>{new Date(project?.createdAt).toLocaleDateString('pt-BR')}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={3} sx={{ textAlign: { sm: 'right' } }}>
+              <Chip 
+                label={project?.status?.toUpperCase() || 'PENDENTE'} 
+                sx={{ 
+                  fontWeight: 900, 
+                  borderRadius: '8px', 
+                  bgcolor: '#4F46E5', 
+                  color: '#FFF',
+                  px: 1
+                }} 
+              />
             </Grid>
           </Grid>
         </Paper>
 
         <Grid container spacing={3}>
-          {/* COLUNA DA ESQUERDA (8.5) */}
-          <Grid item xs={12} md={8.5}>
+          {/* 3. COLUNA PRINCIPAL (ESCOPO E ARQUIVOS) */}
+          <Grid item xs={12} md={8}>
             <Stack spacing={3}>
-              {/* Escopo */}
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 4,
-                  borderRadius: "16px",
-                  border: "1px solid #E2E8F0",
-                  bgcolor: "#FFF",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 800,
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                  }}
-                >
-                  <ScopeIcon sx={{ color: "#94A3B8" }} /> Detalhamento do Escopo
+              
+              {/* BLOCO: DETALHAMENTO DO ESCOPO */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: "20px", border: "1px solid #E2E8F0", bgcolor: '#FFF' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <ScopeIcon sx={{ color: "#4F46E5" }} /> Especificações Técnicas
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Typography
-                  variant="body1"
-                  sx={{ whiteSpace: "pre-line", color: "#334155" }}
-                >
-                  {project?.description}
+                <Divider sx={{ mb: 3 }} />
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line", color: "#334155", lineHeight: 1.8 }}>
+                  {project?.description || "Aguardando preenchimento do detalhamento técnico."}
                 </Typography>
               </Paper>
 
-              {/* Documentos e Anexos */}
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 4,
-                  borderRadius: "16px",
-                  border: "1px solid #E2E8F0",
-                  bgcolor: "#FFF",
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>
-                  📂 Documentos e Anexos
-                </Typography>
+              {/* BLOCO: GESTÃO DE DOCUMENTOS */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: "20px", border: "1px solid #E2E8F0", bgcolor: '#FFF' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>📂 Repositório de Documentos</Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      fullWidth
-                      disabled={uploading}
-                      sx={{
-                        borderStyle: "dashed",
-                        py: 3,
-                        borderRadius: "12px",
-                        flexDirection: "column",
-                        gap: 1,
-                        borderColor: uploading ? "#CBD5E1" : "#94A3B8",
+                  <Grid item xs={12} sm={6}>
+                    <Button 
+                      component="label" 
+                      fullWidth 
+                      sx={{ 
+                        border: "2px dashed #CBD5E1", 
+                        py: 4, 
+                        borderRadius: "16px", 
+                        flexDirection: "column", 
+                        gap: 1, 
                         color: "#64748B",
+                        '&:hover': { bgcolor: '#F8FAFC', borderColor: '#4F46E5' }
                       }}
                     >
-                      {uploading ? (
-                        <CircularProgress
-                          size={32}
-                          sx={{ mb: 1 }}
-                          color="inherit"
-                        />
-                      ) : (
-                        <UploadIcon sx={{ fontSize: 32 }} />
-                      )}
+                      {uploading ? <CircularProgress size={32} color="inherit" /> : <UploadIcon sx={{ fontSize: 40 }} />}
                       <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                        {uploading ? "ENVIANDO..." : "ANEXAR ARQUIVO"}
+                        {uploading ? "SINCRONIZANDO..." : "ENVIAR NOVO ARQUIVO"}
                       </Typography>
-                      <input
-                        type="file"
-                        hidden
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                      />
+                      <input type="file" hidden onChange={handleFileUpload} />
                     </Button>
                   </Grid>
+
                   {project?.ProjectAttachments?.map((file) => (
-                    <Grid item xs={12} sm={6} md={4} key={file.id}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 2,
-                          borderRadius: "12px",
-                          bgcolor: "#F8FAFC",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
-                        }}
-                      >
-                        <FileIcon color="action" />
-                        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 700 }}
-                            noWrap
+                    <Grid item xs={12} sm={6} key={file.id}>
+                      <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", display: "flex", alignItems: "center", gap: 2, bgcolor: '#F8FAFC' }}>
+                        <FileIcon sx={{ color: "#4F46E5" }} />
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>{file.original_name}</Typography>
+                          <Link 
+                            href={`http://localhost:3001/files/projects/${file.file_name}`} 
+                            target="_blank" 
+                            sx={{ fontSize: "0.75rem", fontWeight: 800, textTransform: 'uppercase', textDecoration: 'none' }}
                           >
-                            {file.original_name}
-                          </Typography>
-                          <Link
-                            href={`http://localhost:3001/files/projects/${file.file_name}`}
-                            target="_blank"
-                            sx={{ fontSize: "0.75rem", fontWeight: 700, mr: 2 }}
-                          >
-                            Visualizar
+                            Baixar Arquivo
                           </Link>
                         </Box>
-                        {/* BOTÃO DE EXCLUIR */}
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            handleOpenDeleteModal(file.id, file.original_name)
-                          }
-                          sx={{
-                            color: "#E11D48",
-                            "&:hover": { bgcolor: "#FFF1F2" },
-                          }}
-                        >
+                        <IconButton size="small" onClick={() => handleOpenDeleteModal(file.id, file.original_name)} sx={{ color: "#E11D48" }}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Paper>
@@ -427,266 +327,112 @@ export default function ProjectDetails() {
                   ))}
                 </Grid>
               </Paper>
-
-              {/* Auditoria de Segurança */}
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: "16px",
-                  border: "1px solid #FDA4AF",
-                  bgcolor: "#FFF1F2",
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontWeight: 800,
-                    mb: 2,
-                    color: "#E11D48",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  🛡️ AUDITORIA DE SEGURANÇA
-                </Typography>
-                <Stack spacing={2}>
-                  {auditLogs.map((log) => (
-                    <Box
-                      key={log.id}
-                      sx={{
-                        p: 2,
-                        bgcolor: "#FFF",
-                        borderRadius: "8px",
-                        border: "1px solid #FECDD3",
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 800,
-                          color: "#BE123C",
-                          display: "block",
-                        }}
-                      >
-                        {log.action} —{" "}
-                        {new Date(log.createdAt).toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.5 }}>
-                        Arquivo:{" "}
-                        <strong>{log.ProjectAttachment?.original_name}</strong>
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Rastro IP: {log.ip_address}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Paper>
             </Stack>
           </Grid>
 
-          {/* COLUNA DA DIREITA (LATERAL - 3.5) */}
-          {/* COLUNA DA DIREITA (LATERAL) - Ajustada para estabilidade em 100% de zoom */}
-<Grid item xs={12} md={4} lg={3.5}> 
-  <Stack spacing={3} sx={{ width: "100%" }}>
-    
-    {/* SEÇÃO DA IA (DAVI-AI) */}
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: "16px",
-        border: "1px solid #C4B5FD",
-        bgcolor: "#F5F3FF",
-        display: "flex",
-        flexDirection: "column"
-      }}
-    >
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 800,
-          mb: 2,
-          color: "#7C3AED",
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-        }}
-      >
-        ✨ CONSULTORIA INTELIGENTE
-      </Typography>
+          {/* 4. COLUNA LATERAL (INTELIGÊNCIA E SEGURANÇA) */}
+          <Grid item xs={12} md={4}>
+            <Stack spacing={3}>
+              
+              {/* CARD: IA CONSULTORIA (Destaque Roxo) */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "20px", bgcolor: "#F5F3FF", border: "1px solid #C4B5FD" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "#7C3AED", display: "flex", alignItems: "center", gap: 1 }}>
+                  ✨ FREELA.AI INSIGHTS
+                </Typography>
+                
+                {aiResult ? (
+                  <Stack spacing={2}>
+                    <Box sx={{ p: 2, bgcolor: "#FFF", borderRadius: "12px", border: "1px solid #DDD6FE" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#7C3AED" }}>ANÁLISE FINANCEIRA</Typography>
+                      <Typography variant="body2" sx={{ mt: 1, color: "#4C1D95", fontSize: "0.85rem", lineHeight: 1.5 }}>{aiResult.viabilidade_financeira}</Typography>
+                    </Box>
+                    <Box sx={{ p: 2, bgcolor: "#FFF", borderRadius: "12px", border: "1px solid #DDD6FE" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#059669" }}>RECOMENDAÇÃO</Typography>
+                      <Typography variant="body2" sx={{ mt: 1, color: "#065F46", fontSize: "0.85rem" }}>{aiResult.alerta_margem_lucro}</Typography>
+                    </Box>
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" sx={{ color: "#6D28D9", fontStyle: "italic", mb: 2 }}>
+                    Solicite uma avaliação inteligente do escopo para detectar riscos e oportunidades.
+                  </Typography>
+                )}
+                
+                <Button 
+                  fullWidth 
+                  onClick={handleAIAnalysis} 
+                  disabled={aiLoading} 
+                  variant="contained" 
+                  sx={{ bgcolor: "#7C3AED", fontWeight: 800, mt: 2, textTransform: 'none', '&:hover': { bgcolor: '#6D28D9' } }}
+                >
+                  {aiLoading ? <CircularProgress size={20} color="inherit" /> : "Iniciar Consultoria IA"}
+                </Button>
+              </Paper>
 
-      <Box sx={{ mb: 2 }}>
-        {aiResult ? (
-          <Stack spacing={2}>
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: "#FFF",
-                borderRadius: "12px",
-                border: "1px solid #DDD6FE",
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "#7C3AED" }}>
-                💰 ANÁLISE FINANCEIRA
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, color: "#4C1D95", fontSize: "0.85rem", wordBreak: "break-word" }}>
-                {aiResult.analise_cliente}
-              </Typography>
-              <Divider sx={{ my: 1 }} />
-              <Typography variant="caption" sx={{ color: "#6D28D9", fontWeight: 700 }}>
-                DICA: {aiResult.alerta_margem_lucro}
-              </Typography>
-            </Box>
-            
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: "#FFF",
-                borderRadius: "12px",
-                border: "1px solid #DDD6FE",
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "#BE123C" }}>
-                ⚠️ RISCOS IDENTIFICADOS
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, color: "#334155", fontSize: "0.85rem", wordBreak: "break-word" }}>
-                {aiResult.viabilidade_financeira}
-              </Typography>
-            </Box>
-          </Stack>
-        ) : (
-          <Typography variant="body2" sx={{ color: "#7C3AED", fontStyle: "italic" }}>
-            Analise este projeto com base no perfil do cliente e viabilidade financeira.
-          </Typography>
-        )}
-      </Box>
+              {/* CARD: AUDITORIA DE SISTEMA (Destaque Vermelho) */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "20px", bgcolor: "#FFF1F2", border: "1px solid #FDA4AF" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "#E11D48" }}>
+                  🛡️ LOGS DE SEGURANÇA (AUDIT)
+                </Typography>
+                <Stack spacing={1.5}>
+                  {auditLogs.slice(0, 5).map((log) => (
+                    <Box key={log.id} sx={{ p: 1.5, bgcolor: "#FFF", borderRadius: "10px", border: "1px solid #FECDD3" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#BE123C", display: "block" }}>
+                        {log.action} • {new Date(log.createdAt).toLocaleTimeString()}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 500 }}>Sessão IP: {log.ip_address}</Typography>
+                    </Box>
+                  ))}
+                  {auditLogs.length === 0 && (
+                    <Typography variant="caption" sx={{ color: "#E11D48", fontStyle: 'italic' }}>Nenhuma atividade suspeita registrada.</Typography>
+                  )}
+                </Stack>
+              </Paper>
 
-      <Button
-        fullWidth
-        variant="contained"
-        onClick={handleAIAnalysis}
-        disabled={aiLoading}
-        sx={{
-          mt: "auto",
-          bgcolor: "#7C3AED",
-          fontWeight: 800,
-          textTransform: "none",
-          "&:hover": { bgcolor: "#6D28D9" },
-        }}
-      >
-        {aiLoading ? <CircularProgress size={24} color="inherit" /> : "Gerar Insights"}
-      </Button>
-    </Paper>
-
-    {/* SEÇÃO DE LOGS E PDF */}
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: "16px",
-        border: "1px solid #E2E8F0",
-        bgcolor: "#FFF",
-      }}
-    >
-      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "#64748B" }}>
-        LOGS DE SISTEMA
-      </Typography>
-      
-      <Box sx={{ p: 2, bgcolor: "#F8FAFC", borderRadius: "12px", mb: 2 }}>
-        <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700 }}>
-          ENTRADA NO SISTEMA
-        </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-          {new Date(project?.createdAt).toLocaleDateString()}
-        </Typography>
-      </Box>
-
-      <Button
-        fullWidth
-        variant="contained"
-        onClick={() => generateProjectPDF(project, aiResult)}
-        sx={{
-          bgcolor: "#0F172A",
-          color: "#FFF",
-          fontWeight: 800,
-          textTransform: "none",
-        }}
-      >
-        Gerar Relatório PDF
-      </Button>
-    </Paper>
-  </Stack>
-</Grid>
+            </Stack>
+          </Grid>
         </Grid>
       </Box>
 
+      {/* 5. COMPONENTES DE INTERAÇÃO (DIÁLOGOS E NOTIFICAÇÕES) */}
       <Dialog
         open={deleteModal.open}
         onClose={handleCloseDeleteModal}
         PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 900, color: "#0F172A" }}>
-          Deseja excluir este arquivo?
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900, color: "#0F172A" }}>Confirmar Exclusão?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: "#64748B", fontWeight: 500 }}>
-            Você está prestes a excluir <strong>{deleteModal.fileName}</strong>.
-            Esta ação não pode ser desfeita e um log de auditoria será
-            registrado com seu IP e timestamp.
+            Você está removendo <strong>{deleteModal.fileName}</strong> permanentemente. 
+            Esta ação será registrada na trilha de auditoria.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ pb: 2, px: 3 }}>
-          <Button
-            onClick={handleCloseDeleteModal}
-            sx={{ color: "#64748B", fontWeight: 700 }}
+          <Button onClick={handleCloseDeleteModal} sx={{ color: "#64748B", fontWeight: 700 }}>Desistir</Button>
+          <Button 
+            onClick={() => { handleDeleteAttachment(deleteModal.attachmentId); handleCloseDeleteModal(); }} 
+            variant="contained" 
+            sx={{ bgcolor: "#E11D48", fontWeight: 700, borderRadius: "8px", '&:hover': { bgcolor: "#BE123C" } }}
           >
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              handleDeleteAttachment(deleteModal.attachmentId);
-              handleCloseDeleteModal();
-            }}
-            variant="contained"
-            sx={{
-              bgcolor: "#E11D48",
-              fontWeight: 700,
-              borderRadius: "8px",
-              "&:hover": { bgcolor: "#BE123C" },
-            }}
-          >
-            Excluir Permanentemente
+            Confirmar Remoção
           </Button>
         </DialogActions>
       </Dialog>
 
       <Snackbar 
-  open={notify.open} 
-  autoHideDuration={4000} 
-  onClose={handleCloseNotify}
-  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
->
-  <Alert 
-    onClose={handleCloseNotify} 
-    severity={notify.severity} 
-    variant="filled" 
-    sx={{ 
-      width: '100%', 
-      borderRadius: '12px', 
-      fontWeight: 700,
-      backgroundColor: 
-        notify.severity === 'success' ? '#2e7d32' : 
-        notify.severity === 'warning' ? '#ed6c02' :
-        '#d32f2f',
-      boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)" 
-    }}
-  >
-    {notify.message}
-  </Alert>
-</Snackbar>
+        open={notify.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseNotify}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseNotify} 
+          severity={notify.severity} 
+          variant="filled" 
+          sx={{ width: '100%', borderRadius: '12px', fontWeight: 700, boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)" }}
+        >
+          {notify.message}
+        </Alert>
+      </Snackbar>
     </AppLayout>
   );
 }

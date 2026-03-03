@@ -6,37 +6,56 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    if (storedToken) {
+    const storedUser = localStorage.getItem('user'); 
+
+    if (storedToken && storedUser) {
       setToken(storedToken);
+      setUser(JSON.parse(storedUser)); 
+      api.defaults.headers.Authorization = `Bearer ${storedToken}`;
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-
     const response = await api.post('/users/login', { email, password });
-    const newToken = response.data.token;
-    setToken(newToken);
-    localStorage.setItem('token', newToken);
-  };
+    
+    const { token: newToken, user: userData } = response.data;
 
+    setToken(newToken);
+    setUser(userData);
+
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    api.defaults.headers.Authorization = `Bearer ${newToken}`;
+  };
 
   const logout = () => {
     setToken(null);
+    setUser(null); 
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    delete api.defaults.headers.Authorization;
   };
 
+  const updateUserInfo = (newData) => {
+  setUser(prev => {
+    const updated = { ...prev, ...newData };
+    localStorage.setItem('user', JSON.stringify(updated));
+    return updated;
+  });
+};
+
   return (
-    <AuthContext.Provider value={{ token, login, logout, loading }}>
+    <AuthContext.Provider value={{ token, user, login, logout, loading, updateUserInfo }}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
