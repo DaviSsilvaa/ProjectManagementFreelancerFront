@@ -68,6 +68,20 @@ const getStatusStyles = (status) => {
         bg: "#EFF6FF",
         icon: <ProgressIcon fontSize="small" />,
       };
+    case "IN_NEGOTIATION":
+      return {
+        label: "Em Negociação",
+        color: "#6366F1",
+        bg: "rgba(99, 102, 241, 0.08)",
+        icon: <PendingIcon fontSize="small" />,
+      };
+    case "CANCELLED":
+      return {
+        label: "Cancelado",
+        color: "#EF4444",
+        bg: "rgba(239, 68, 68, 0.08)",
+        icon: <CloseIcon fontSize="small" />,
+      };
     default:
       return {
         label: "Pendente",
@@ -382,25 +396,26 @@ function ClientDetail() {
                           </Box>
 
                           <FormControl size="small" sx={{ minWidth: 160 }}>
-                            <Select
-  // Forçamos o valor para MAIÚSCULO para bater com os itens abaixo
-  value={(project.status || "PENDING").toUpperCase()} 
-  onChange={(e) => handleStatusChange(project.id, e.target.value)}
-  sx={{
-    borderRadius: "12px",
-    fontSize: "0.8rem",
-    fontWeight: 800,
-    bgcolor: getStatusStyles(project.status).bg,
-    color: getStatusStyles(project.status).color,
-    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-  }}
->
-  {/* O 'value' deve ser exatamente o que você quer tratar no código */}
-  <MenuItem value="PENDING">Pendente</MenuItem>
-  <MenuItem value="IN_PROGRESS">Em Desenvolvimento</MenuItem>
-  <MenuItem value="COMPLETED">Finalizado</MenuItem>
-  <MenuItem value="CANCELLED">Cancelado</MenuItem>
-</Select>
+                            <FormControl size="small" sx={{ minWidth: 180 }}>
+  <Select
+    value={(project.status || "PENDING").toUpperCase()} 
+    onChange={(e) => handleStatusChange(project.id, e.target.value)}
+    sx={{
+      borderRadius: "12px",
+      fontSize: "0.75rem",
+      fontWeight: 800,
+      bgcolor: getStatusStyles(project.status).bg,
+      color: getStatusStyles(project.status).color,
+      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+    }}
+  >
+    <MenuItem value="PENDING" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Pendente</MenuItem>
+    <MenuItem value="IN_NEGOTIATION" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Em Negociação</MenuItem>
+    <MenuItem value="IN_PROGRESS" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Em Desenvolvimento</MenuItem>
+    <MenuItem value="COMPLETED" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Finalizado</MenuItem>
+    <MenuItem value="CANCELLED" sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#EF4444' }}>Cancelado</MenuItem>
+  </Select>
+</FormControl>
                           </FormControl>
                         </Box>
                       );

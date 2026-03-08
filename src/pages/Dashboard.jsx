@@ -22,6 +22,9 @@ import {
   TextField,
   InputAdornment,
   Grid,
+  Stack,
+  Divider,
+  Chip,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -292,114 +295,123 @@ function Dashboard() {
         )}
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Box>
-            {filteredClients.length > 0 ? (
-              filteredClients.map((client) => (
-                <Paper
-                  key={client.id}
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    borderRadius: "16px",
-                    border: "1px solid #E2E8F0",
-                    bgcolor: "#FFF",
-                    transition: "0.2s",
-                    "&:hover": {
-                      borderColor: "#4F46E5",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 10px 20px rgba(0,0,0,0.04)",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: stringToColor(client.name),
-                        width: 52,
-                        height: 52,
-                        fontWeight: 800,
-                        fontSize: "1.1rem",
-                      }}
-                    >
-                      {getInitials(client.name)}
-                    </Avatar>
-                    <Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Typography sx={{ fontWeight: 700, color: "#1E293B" }}>
-                          {client.name}
-                        </Typography>
-                        {client.company && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              bgcolor: "#F1F5F9",
-                              px: 1,
-                              py: 0.2,
-                              borderRadius: "6px",
-                              color: "#475569",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {client.company}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Typography variant="body2" sx={{ color: "#64748B" }}>
-                        {client.email || "E-mail não informado"}
-                      </Typography>
-                    </Box>
-                  </Box>
+  <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+    <CircularProgress color="inherit" />
+  </Box>
+) : (
+  <Paper 
+    elevation={0} 
+    sx={{ 
+      borderRadius: '16px', 
+      border: '1px solid #E2E8F0', 
+      overflow: 'hidden',
+      bgcolor: '#FFF'
+    }}
+  >
+    {/* CABEÇALHO DA TABELA */}
+    <Box sx={{ 
+      px: 3, py: 2, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', 
+      display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' 
+    }}>
+      <Typography sx={{ flex: 4, fontWeight: 800, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase' }}>
+        Parceiro / Identificação
+      </Typography>
+      <Typography sx={{ flex: 3, fontWeight: 800, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase' }}>
+        Empresa / Organização
+      </Typography>
+      <Typography sx={{ flex: 3, fontWeight: 800, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase' }}>
+        Contato Direto
+      </Typography>
+      <Typography sx={{ flex: 1, fontWeight: 800, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', textAlign: 'right' }}>
+        Ações
+      </Typography>
+    </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    {client.phone && (
-                      <IconButton
-                        size="small"
-                        sx={{
-                          color: "#22C55E",
-                          "&:hover": { bgcolor: "#F0FDF4" },
-                        }}
-                        onClick={() =>
-                          window.open(
-                            `https://wa.me/${client.phone.replace(/\D/g, "")}`,
-                            "_blank",
-                          )
-                        }
-                      >
-                        <WhatsAppIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                    <IconButton onClick={(e) => handleMenuClick(e, client.id)}>
-                      <MoreVertIcon sx={{ color: "#94A3B8" }} />
-                    </IconButton>
-                  </Box>
-                </Paper>
-              ))
-            ) : (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 10,
-                  border: "2px dashed #E2E8F0",
-                  borderRadius: "16px",
-                }}
-              >
-                <Typography color="text.secondary">
-                  Nenhum parceiro encontrado.
-                </Typography>
-              </Box>
-            )}
+    {/* O Stack organiza as linhas e adiciona o Divider entre elas automaticamente */}
+<Stack divider={<Divider sx={{ borderColor: '#F1F5F9' }} />} sx={{ bgcolor: '#FFF' }}>
+  {filteredClients.length > 0 ? (
+    filteredClients.map((client) => (
+      <Box 
+        key={client.id} 
+        sx={{ 
+          px: 3, py: 2.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2,
+          transition: '0.2s', '&:hover': { bgcolor: '#F8FAFC' } 
+        }}
+      >
+        {/* 1. PARCEIRO / IDENTIFICAÇÃO */}
+        <Box sx={{ flex: { xs: '1 1 100%', md: 4 }, display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+          <Avatar
+            sx={{
+              bgcolor: stringToColor(client.name),
+              width: 42, height: 42, fontWeight: 800, borderRadius: '10px'
+            }}
+          >
+            {getInitials(client.name)}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: '#1E293B' }} noWrap>
+              {client.name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#94A3B8' }} noWrap>
+              {client.email || "E-mail não informado"}
+            </Typography>
           </Box>
-        )}
+        </Box>
+
+        {/* 2. EMPRESA / ORGANIZAÇÃO */}
+        <Box sx={{ flex: { xs: '1 1 45%', md: 3 } }}>
+          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 800, display: 'block', mb: 0.5 }}>
+            EMPRESA / ORGANIZAÇÃO
+          </Typography>
+          <Chip 
+            label={client.company || "Pessoa Física"} 
+            size="small"
+            sx={{ 
+              bgcolor: client.company ? '#EEF2FF' : '#F1F5F9', 
+              color: client.company ? '#4F46E5' : '#64748B',
+              fontWeight: 700, borderRadius: '6px', fontSize: '0.7rem'
+            }} 
+          />
+        </Box>
+
+        {/* 3. CONTATO DIRETO (TELEFONE) */}
+        <Box sx={{ flex: { xs: '1 1 45%', md: 3 } }}>
+          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 800, display: 'block', mb: 0.5 }}>
+            CONTATO DIRETO
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#1E293B', fontWeight: 600 }}>
+            {client.phone || "Não informado"}
+          </Typography>
+        </Box>
+
+        {/* 4. AÇÕES (RECUPERADAS) */}
+        <Box sx={{ flex: { xs: '1 1 100%', md: 1 }, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          {client.phone && (
+            <IconButton
+              size="small"
+              sx={{ color: "#22C55E", "&:hover": { bgcolor: "#F0FDF4" } }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`https://wa.me/${client.phone.replace(/\D/g, "")}`, "_blank");
+              }}
+            >
+              <WhatsAppIcon fontSize="small" />
+            </IconButton>
+          )}
+          <IconButton size="small" onClick={(e) => handleMenuClick(e, client.id)}>
+            <MoreVertIcon sx={{ color: "#94A3B8" }} />
+          </IconButton>
+        </Box>
+      </Box>
+    ))
+  ) : (
+    <Box sx={{ textAlign: "center", py: 10 }}>
+      <Typography color="text.secondary">Nenhum parceiro encontrado.</Typography>
+    </Box>
+  )}
+</Stack>
+  </Paper>
+)}
 
         {/* --- COMPONENTES DE SUPORTE (MENU/DIALOG) --- */}
         <Menu

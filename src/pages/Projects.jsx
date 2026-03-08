@@ -19,11 +19,15 @@ import {
   ShieldOutlined as ShieldIcon
 } from "@mui/icons-material";
 
-// Configurações de Tema para os Status
 const statusTheme = {
   pending: { color: '#F59E0B', label: 'PENDENTE', bg: 'rgba(245, 158, 11, 0.08)' },
+  PENDING: { color: '#F59E0B', label: 'PENDENTE', bg: 'rgba(245, 158, 11, 0.08)' },
   in_progress: { color: '#3B82F6', label: 'EM EXECUÇÃO', bg: 'rgba(59, 130, 246, 0.08)' },
-  completed: { color: '#10B981', label: 'FINALIZADO', bg: 'rgba(16, 185, 129, 0.08)' }
+  IN_PROGRESS: { color: '#3B82F6', label: 'EM EXECUÇÃO', bg: 'rgba(59, 130, 246, 0.08)' },
+  completed: { color: '#10B981', label: 'FINALIZADO', bg: 'rgba(16, 185, 129, 0.08)' },
+  COMPLETED: { color: '#10B981', label: 'FINALIZADO', bg: 'rgba(16, 185, 129, 0.08)' },
+  IN_NEGOTIATION: { color: '#6366F1', label: 'EM NEGOCIAÇÃO', bg: 'rgba(99, 102, 241, 0.08)' },
+  CANCELLED: { color: '#EF4444', label: 'CANCELADO', bg: 'rgba(239, 68, 68, 0.08)' }
 };
 
 // Estilo customizado para os Inputs do Modal
@@ -141,60 +145,139 @@ export default function Projects() {
       {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '8px' }} onClose={() => setError("")}>{error}</Alert>}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress color="inherit" /></Box>
-      ) : (
-        <Stack spacing={2}>
-          {projects.map((p) => {
-            const theme = statusTheme[p.status] || statusTheme.pending;
-            return (
-              <Paper 
-                key={p.id} 
-                elevation={0}
-                sx={{ p: 3, borderRadius: "12px", border: '1px solid #E2E8F0', transition: 'all 0.2s ease', '&:hover': { borderColor: '#94A3B8', bgcolor: '#F8FAFC' } }}
-              >
-                <Grid container alignItems="center" spacing={4}>
-                  <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                    <Avatar sx={{ bgcolor: '#F1F5F9', color: '#475569', borderRadius: '8px' }}><ProjectIcon /></Avatar>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E293B' }} noWrap>{p.title}</Typography>
-                      <Typography variant="caption" sx={{ color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <TimeIcon sx={{ fontSize: 14 }} /> {new Date(p.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  </Grid>
+  <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}><CircularProgress color="inherit" /></Box>
+) : (
+  <Box>
+    {/* 1. INDICADORES ESTRATÉGICOS (KPIs) - Peso para o TCC */}
+    <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid item xs={12} md={4}>
+        <Paper sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Volume em Carteira</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: '#0F172A' }}>
+            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+              projects.reduce((acc, p) => acc + (Number(p.budget) || 0), 0)
+            )}
+          </Typography>
+        </Paper>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <Paper sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Projetos Ativos</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: '#3B82F6' }}>
+            {projects.filter(p => p.status !== 'completed').length}
+          </Typography>
+        </Paper>
+      </Grid>
+    </Grid>
 
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>Parceiro Comercial</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{clientNameById.get(p.client_id) || 'S/ VÍNCULO'}</Typography>
-                  </Grid>
+    {/* 2. TABELA OPERACIONAL DE ALTA DENSIDADE */}
+    <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+      {/* Cabeçalho da Tabela */}
+      <Box sx={{ 
+        px: 3, py: 2, bgcolor: '#F1F5F9', borderBottom: '1px solid #E2E8F0', 
+        display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' 
+      }}>
+        <Typography sx={{ flex: 3, fontWeight: 800, fontSize: '0.75rem', color: '#475569' }}>PROJETO / DESCRIÇÃO</Typography>
+        <Typography sx={{ flex: 2, fontWeight: 800, fontSize: '0.75rem', color: '#475569' }}>PARCEIRO COMERCIAL</Typography>
+        <Typography sx={{ flex: 1.5, fontWeight: 800, fontSize: '0.75rem', color: '#475569' }}>ORÇAMENTO</Typography>
+        <Typography sx={{ flex: 1.5, fontWeight: 800, fontSize: '0.75rem', color: '#475569' }}>STATUS</Typography>
+        <Typography sx={{ flex: 1, fontWeight: 800, fontSize: '0.75rem', color: '#475569', textAlign: 'right' }}>AÇÕES</Typography>
+      </Box>
 
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 1 }}>Status</Typography>
-                    <Chip label={theme.label} sx={{ bgcolor: theme.bg, color: theme.color, fontWeight: 900, borderRadius: '4px', fontSize: '0.65rem', height: 24, border: `1px solid ${theme.color}` }} />
-                  </Grid>
+      <Stack divider={<Divider />}>
+        {projects.map((p) => {
+          const theme = statusTheme[p.status] || statusTheme.pending;
+          return (
+            <Box 
+              key={p.id} 
+              sx={{ 
+                px: 3, py: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2,
+                transition: '0.2s', '&:hover': { bgcolor: '#F8FAFC' } 
+              }}
+            >
+              {/* Identificação */}
+              {/* Coluna 1: Identificação - Ajustada para não quebrar o layout */}
+<Box sx={{ 
+  flex: { xs: '1 1 100%', md: 3 }, 
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: 2,
+  minWidth: 0 // ESSENCIAL: permite que o flex-item encolha
+}}>
+  <Avatar sx={{ bgcolor: theme.bg, color: theme.color, borderRadius: '8px', width: 40, height: 40 }}>
+    <ProjectIcon fontSize="small" />
+  </Avatar>
+  <Box sx={{ minWidth: 0, flex: 1 }}> {/* minWidth aqui também */}
+    <Typography 
+      variant="body2" 
+      sx={{ 
+        fontWeight: 700, 
+        color: '#1E293B',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis' // Adiciona os "..."
+      }}
+    >
+      {p.title}
+    </Typography>
+    <Typography 
+      variant="caption" 
+      sx={{ 
+        color: '#94A3B8', 
+        display: 'block',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis' // Trunca a descrição longa
+      }}
+    >
+      {p.description || 'Sem especificações técnicas detalhadas'}
+    </Typography>
+  </Box>
+</Box>
 
-                  <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-  <Button 
-    variant="outlined" 
-    onClick={() => navigate(`/projects/${p.id}`)} 
-    sx={{ 
-      borderRadius: '6px', 
-      textTransform: 'none', 
-      fontWeight: 700, 
-      color: '#475569', 
-      borderColor: '#CBD5E1',
-      '&:hover': { bgcolor: '#F1F5F9', borderColor: '#94A3B8' }
-    }}
-  >
-    Gerenciar
-  </Button>
-</Grid>
-                </Grid>
-              </Paper>
-            );
-          })}
-        </Stack>
-      )}
+              {/* Cliente */}
+              <Box sx={{ flex: { xs: '1 1 45%', md: 2 } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
+                  {clientNameById.get(p.client_id) || 'CLIENTE GERAL'}
+                </Typography>
+              </Box>
+
+              {/* Financeiro */}
+              <Box sx={{ flex: { xs: '1 1 45%', md: 1.5 } }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.budget || 0)}
+                </Typography>
+              </Box>
+
+              {/* Status Badge */}
+              <Box sx={{ flex: { xs: '1 1 45%', md: 1.5 } }}>
+                <Chip 
+                  label={theme.label} 
+                  size="small"
+                  sx={{ 
+                    bgcolor: theme.bg, color: theme.color, fontWeight: 900, 
+                    borderRadius: '6px', fontSize: '0.65rem', border: `1px solid ${theme.color}30` 
+                  }} 
+                />
+              </Box>
+
+              {/* Ação */}
+              <Box sx={{ flex: { xs: '1 1 100%', md: 1 }, textAlign: 'right' }}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                  sx={{ color: '#64748B', '&:hover': { color: '#0F172A', bgcolor: '#E2E8F0' } }}
+                >
+                  <ShieldIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Paper>
+  </Box>
+)}
 
       {/* MODAL PROFESSIONAL INTEGRADO */}
       <Dialog 

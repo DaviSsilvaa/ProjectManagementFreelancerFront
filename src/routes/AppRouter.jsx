@@ -1,13 +1,16 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Login from '../pages/Login.jsx';
-import Dashboard from '../pages/Dashboard.jsx'; // clientes
-import ClientDetail from '../pages/ClientDetail.jsx';
-import RegisterClient from '../pages/RegisterClient.jsx';
-import DashboardCharts from '../pages/DashboardCharts.jsx';
-import Projects from '../pages/Projects.jsx';
-import ProjectDetails from '../pages/ProjectDetails.jsx';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Login from "../pages/Login.jsx";
+import Dashboard from "../pages/Dashboard.jsx"; // clientes
+import ClientDetail from "../pages/ClientDetail.jsx";
+import RegisterClient from "../pages/RegisterClient.jsx";
+import DashboardCharts from "../pages/DashboardCharts.jsx";
+import Projects from "../pages/Projects.jsx";
+import ProjectDetails from "../pages/ProjectDetails.jsx";
+import KanbanPage from "../pages/KanbanPage.jsx";
+import ProfilePage from "../pages/ProfilePage.jsx";
+import SettingsPage from "../pages/SettingsPage.jsx";
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -35,6 +38,8 @@ export default function AppRouter() {
         }
       />
 
+      
+
       {/* Dashboard de gráficos */}
       <Route
         path="/dashboard"
@@ -51,6 +56,15 @@ export default function AppRouter() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/kanban"
+        element={
+          <PrivateRoute>
+            <KanbanPage />
           </PrivateRoute>
         }
       />
@@ -82,15 +96,6 @@ export default function AppRouter() {
       />
 
       <Route
-        path="/dashboard/projects"
-        element={
-          <PrivateRoute>
-            <Projects />
-          </PrivateRoute>
-        }
-      />
-      
-      <Route
         path="/projects/:id"
         element={
           <PrivateRoute>
@@ -99,7 +104,24 @@ export default function AppRouter() {
         }
       />
 
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute>
+            <SettingsPage />
+          </PrivateRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <ProfilePage />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }

@@ -68,7 +68,7 @@ export const generateProjectPDF = (project, aiResult) => {
 
     doc.setFontSize(14);
     doc.setTextColor(...colors.purpleMain);
-    doc.text("✨ CONSULTORIA INTELIGENTE (DAVI-AI)", 17, currentY + 7);
+    doc.text("✨ CONSULTORIA INTELIGENTE)", 17, currentY + 7);
 
     autoTable(doc, {
       startY: currentY + 12,
