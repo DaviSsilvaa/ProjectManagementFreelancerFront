@@ -38,7 +38,6 @@ import {
 } from "@mui/icons-material";
 import AppLayout from "../layout/AppLayout";
 
-// --- FUNÇÕES AUXILIARES (Lógica de UI) ---
 const stringToColor = (string) => {
   let hash = 0;
   for (let i = 0; i < string.length; i++) {
@@ -83,7 +82,6 @@ function Dashboard() {
 
   const isMenuOpen = Boolean(anchorEl);
 
-  // Filtro em tempo real (Otimizado com useMemo)
   const filteredClients = useMemo(() => {
     return clients.filter(
       (c) =>
@@ -144,7 +142,7 @@ function Dashboard() {
       setSuccessMessage("Registro removido com sucesso.");
       setOpenSnackbar(true);
     } catch (err) {
-      console.error("Erro na exclusão:", err); // Agora 'err' está sendo usado!
+      console.error("Erro na exclusão:", err);
       setErrorMsg(err.response?.data?.error || "Falha ao excluir o registro.");
     } finally {
       setConfirmLoading(false);
@@ -156,9 +154,9 @@ function Dashboard() {
     <AppLayout title="Dashboard">
       <Box
         sx={{
-          backgroundColor: "#F8FAFC", // Azul acinzentado suave para tirar o branco cansativo
+          backgroundColor: "#F8FAFC",
           minHeight: "100vh",
-          m: -3, // Compensa o padding do layout base
+          m: -3,
           p: 3,
         }}
       >
@@ -327,7 +325,6 @@ function Dashboard() {
       </Typography>
     </Box>
 
-    {/* O Stack organiza as linhas e adiciona o Divider entre elas automaticamente */}
 <Stack divider={<Divider sx={{ borderColor: '#F1F5F9' }} />} sx={{ bgcolor: '#FFF' }}>
   {filteredClients.length > 0 ? (
     filteredClients.map((client) => (
@@ -338,7 +335,6 @@ function Dashboard() {
           transition: '0.2s', '&:hover': { bgcolor: '#F8FAFC' } 
         }}
       >
-        {/* 1. PARCEIRO / IDENTIFICAÇÃO */}
         <Box sx={{ flex: { xs: '1 1 100%', md: 4 }, display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
           <Avatar
             sx={{
@@ -358,7 +354,6 @@ function Dashboard() {
           </Box>
         </Box>
 
-        {/* 2. EMPRESA / ORGANIZAÇÃO */}
         <Box sx={{ flex: { xs: '1 1 45%', md: 3 } }}>
           <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 800, display: 'block', mb: 0.5 }}>
             EMPRESA / ORGANIZAÇÃO
@@ -374,7 +369,6 @@ function Dashboard() {
           />
         </Box>
 
-        {/* 3. CONTATO DIRETO (TELEFONE) */}
         <Box sx={{ flex: { xs: '1 1 45%', md: 3 } }}>
           <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 800, display: 'block', mb: 0.5 }}>
             CONTATO DIRETO
@@ -384,7 +378,6 @@ function Dashboard() {
           </Typography>
         </Box>
 
-        {/* 4. AÇÕES (RECUPERADAS) */}
         <Box sx={{ flex: { xs: '1 1 100%', md: 1 }, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
           {client.phone && (
             <IconButton
@@ -413,7 +406,6 @@ function Dashboard() {
   </Paper>
 )}
 
-        {/* --- COMPONENTES DE SUPORTE (MENU/DIALOG) --- */}
         <Menu
           anchorEl={anchorEl}
           open={isMenuOpen}

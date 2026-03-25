@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { 
   Box, Typography, TextField, Button, CircularProgress, 
-  Alert, Snackbar, Paper, Grid, Divider, Stack, InputAdornment 
+  Alert, Snackbar, Paper, Grid, Divider, Stack, InputAdornment, Avatar
 } from '@mui/material';
 import { 
   Person as PersonIcon, 
   Business as BusinessIcon, 
   Email as EmailIcon, 
   Phone as PhoneIcon,
-  Description as NotesIcon,
   LocationOn as LocationIcon,
   Badge as BadgeIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  ChevronLeft as BackIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -27,21 +27,54 @@ function RegisterClient() {
   const [status, setStatus] = useState({ error: '', success: false });
 
   const handleChange = (field) => (e) => {
-  let value = e.target.value;
+    let value = e.target.value;
 
-  if (field === 'phone') {
-    // Remove tudo que não é dígito
-    value = value.replace(/\D/g, "");
-
-    // Aplica a máscara (99) 99999-9999 ou (99) 9999-9999
-    if (value.length <= 11) {
-      value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
-      value = value.replace(/(\d)(\d{4})$/, "$1-$2");
+    if (field === 'phone') {
+      value = value.replace(/\D/g, "");
+      if (value.length <= 11) {
+        value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
+        value = value.replace(/(\d)(\d{4})$/, "$1-$2");
+      }
     }
-  }
 
-  setFormData({ ...formData, [field]: value });
-};
+    if (field === 'taxId') {
+      value = value.replace(/\D/g, "").substring(0, 14);
+      if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      } else {
+        value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        value = value.replace(/(\d{4})(\d)/, "$1-$2");
+      }
+    }
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const inputStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "12px",
+      transition: "all 0.2s",
+      backgroundColor: "#F8FAFC",
+      "& fieldset": { borderColor: "#E2E8F0" },
+      "&:hover fieldset": { borderColor: "#CBD5E1" },
+      "&.Mui-focused fieldset": { borderColor: "#4F46E5", borderWidth: "2px" },
+    },
+    "& .MuiInputLabel-root": { fontWeight: 500, color: "#64748B" }
+  };
+
+  const SectionHeader = ({ icon, title, number }) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Avatar sx={{ bgcolor: '#4F46E5', width: 32, height: 32, fontSize: '0.875rem', fontWeight: 700 }}>
+        {number}
+      </Avatar>
+      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#1E293B", textTransform: 'uppercase', letterSpacing: 1 }}>
+        {title}
+      </Typography>
+    </Box>
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,68 +82,65 @@ function RegisterClient() {
     try {
       await api.post('/clients', formData);
       setStatus({ ...status, success: true });
-      setTimeout(() => navigate('/dashboard/clients'), 1000);
+      setTimeout(() => navigate('/dashboard/clients'), 1500);
     } catch (err) {
-      console.log(err);
-      
-      setStatus({ ...status, error: 'Falha ao processar o registro no servidor.' });
+      setStatus({ ...status, error: 'Erro ao salvar. Verifique os dados.' });
       setLoading(false);
     }
   };
 
   return (
-    <AppLayout title="Ficha de Cadastro Empresarial">
-      {/* Container sem limite de largura para esticar em telas grandes */}
-      <Box sx={{ width: '100%', mt: 2, mb: 4 }}>
+    <AppLayout title="Novo Parceiro Comercial">
+      <Box sx={{ maxWidth: 1000, mx: 'auto', py: 4 }}>
         
+        {/* Header de Navegação */}
+        <Button 
+          startIcon={<BackIcon />} 
+          onClick={() => navigate(-1)}
+          sx={{ mb: 3, color: '#64748B', fontWeight: 700, textTransform: 'none' }}
+        >
+          Voltar para listagem
+        </Button>
+
         <Paper 
           elevation={0} 
           sx={{ 
-            p: { xs: 3, md: 6 }, 
-            borderRadius: '16px', 
+            p: { xs: 4, md: 6 }, 
+            borderRadius: '24px', 
             border: '1px solid #E2E8F0', 
-            bgcolor: '#FFF',
-            minHeight: '80vh' // Garante que o card preencha a altura da tela
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            bgcolor: '#FFF'
           }}
         >
           <form onSubmit={handleSubmit}>
-            <Stack spacing={6}>
+            <Stack spacing={5}>
               
-              {/* SEÇÃO 1: IDENTIFICAÇÃO - Campos Compridos */}
+              {/* SEÇÃO 1 */}
               <Box>
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 4, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  01. Identificação de Mercado
-                </Typography>
-                <Grid container spacing={4}>
-                  <Grid item xs={12} xl={8}>
+                <SectionHeader number="01" title="Identificação" />
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={8}>
                     <TextField 
-                      fullWidth 
-                      label="Nome Completo / Razão Social *" 
-                      variant="outlined" 
-                      value={formData.name} 
-                      onChange={handleChange('name')} 
-                      required 
-                      InputProps={{ startAdornment: <InputAdornment position="start"><PersonIcon color="action" /></InputAdornment> }} 
+                      fullWidth label="Nome Completo / Razão Social *" 
+                      value={formData.name} onChange={handleChange('name')} required 
+                      sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
                     />
                   </Grid>
-                  <Grid item xs={12} xl={4}>
+                  <Grid item xs={12} md={4}>
                     <TextField 
-                      fullWidth 
-                      label="CPF / CNPJ" 
-                      variant="outlined" 
-                      value={formData.taxId} 
-                      onChange={handleChange('taxId')} 
-                      InputProps={{ startAdornment: <InputAdornment position="start"><BadgeIcon color="action" /></InputAdornment> }} 
+                      fullWidth label="CPF / CNPJ" 
+                      value={formData.taxId} onChange={handleChange('taxId')} 
+                      inputProps={{ maxLength: 18 }} sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><BadgeIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField 
-                      fullWidth 
-                      label="Nome da Empresa / Grupo Econômico" 
-                      variant="outlined" 
-                      value={formData.company} 
-                      onChange={handleChange('company')}
-                      InputProps={{ startAdornment: <InputAdornment position="start"><BusinessIcon color="action" /></InputAdornment> }} 
+                      fullWidth label="Nome da Empresa / Grupo" 
+                      value={formData.company} onChange={handleChange('company')}
+                      sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><BusinessIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
                     />
                   </Grid>
                 </Grid>
@@ -118,51 +148,32 @@ function RegisterClient() {
 
               <Divider />
 
-              {/* SEÇÃO 2: CONTATO E LOCALIZAÇÃO */}
+              {/* SEÇÃO 2 */}
               <Box>
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 4, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  02. Canais e Endereçamento
-                </Typography>
-                <Grid container spacing={4}>
+                <SectionHeader number="02" title="Contato e Localização" />
+                <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <TextField 
-                      fullWidth 
-                      label="E-mail Corporativo de Contato *" 
-                      variant="outlined" 
-                      type="email" 
-                      value={formData.email} 
-                      onChange={handleChange('email')} 
-                      required
-                      InputProps={{ startAdornment: <InputAdornment position="start"><EmailIcon color="action" /></InputAdornment> }} 
+                      fullWidth label="E-mail Principal *" type="email" 
+                      value={formData.email} onChange={handleChange('email')} required
+                      sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
-  <TextField 
-    fullWidth 
-    label="Telefone / WhatsApp Comercial *" 
-    variant="outlined" 
-    value={formData.phone} 
-    onChange={handleChange('phone')} 
-    required
-    placeholder="(00) 00000-0000"
-    inputProps={{ maxLength: 15 }}
-    InputProps={{ 
-      startAdornment: (
-        <InputAdornment position="start">
-          <PhoneIcon color="action" />
-        </InputAdornment>
-      ) 
-    }} 
-  />
-</Grid>
+                    <TextField 
+                      fullWidth label="Telefone / WhatsApp *" 
+                      value={formData.phone} onChange={handleChange('phone')} required
+                      inputProps={{ maxLength: 15 }} sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <TextField 
-                      fullWidth 
-                      label="Endereço Completo (Sede ou Filial)" 
-                      variant="outlined" 
-                      value={formData.address} 
-                      onChange={handleChange('address')}
-                      InputProps={{ startAdornment: <InputAdornment position="start"><LocationIcon color="action" /></InputAdornment> }} 
+                      fullWidth label="Endereço da Sede" 
+                      value={formData.address} onChange={handleChange('address')}
+                      sx={inputStyle}
+                      InputProps={{ startAdornment: <InputAdornment position="start"><LocationIcon sx={{ color: '#94A3B8' }} /></InputAdornment> }} 
                     />
                   </Grid>
                 </Grid>
@@ -170,31 +181,24 @@ function RegisterClient() {
 
               <Divider />
 
-              {/* SEÇÃO 3: NOTAS - Área de texto expandida */}
+              {/* SEÇÃO 3 */}
               <Box>
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 4, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  03. Observações de Gestão
-                </Typography>
+                <SectionHeader number="03" title="Notas Estratégicas" />
                 <TextField 
-                  fullWidth 
-                  label="Notas Estratégicas e Histórico" 
-                  multiline 
-                  rows={8} 
-                  variant="outlined"
-                  value={formData.notes} 
-                  onChange={handleChange('notes')}
-                  placeholder="Descreva detalhes importantes sobre a prospecção, termos de contrato ou preferências do cliente..."
+                  fullWidth multiline rows={4} label="Histórico e Observações" 
+                  value={formData.notes} onChange={handleChange('notes')}
+                  placeholder="Ex: Cliente prefere reuniões às terças..."
+                  sx={inputStyle}
                 />
               </Box>
 
-              {/* FOOTER DE AÇÕES - Fixado no final do card comprido */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 3, pt: 5, borderTop: '1px solid #E2E8F0' }}>
+              {/* Ações */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2 }}>
                 <Button 
                   onClick={() => navigate(-1)} 
-                  variant="text" 
-                  sx={{ color: '#64748B', fontWeight: 800, px: 4, fontSize: '1rem' }}
+                  sx={{ color: '#64748B', fontWeight: 700, textTransform: 'none', px: 3 }}
                 >
-                  Descartar Cadastro
+                  Cancelar
                 </Button>
                 <Button 
                   type="submit" 
@@ -202,17 +206,12 @@ function RegisterClient() {
                   disableElevation 
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                   sx={{ 
-                    px: 8, 
-                    py: 2, 
-                    borderRadius: '12px', 
-                    fontWeight: 900, 
-                    fontSize: '1rem',
-                    bgcolor: '#4F46E5',
-                    '&:hover': { bgcolor: '#4338CA' }
+                    px: 6, py: 1.5, borderRadius: '12px', fontWeight: 800, textTransform: 'none',
+                    bgcolor: '#4F46E5', '&:hover': { bgcolor: '#4338CA', boxShadow: '0 8px 15px -3px rgb(79 70 229 / 0.4)' }
                   }} 
                   disabled={loading}
                 >
-                  {loading ? 'Salvando dados...' : 'Finalizar Registro'}
+                  {loading ? 'Processando...' : 'Salvar Registro'}
                 </Button>
               </Box>
 
@@ -221,9 +220,13 @@ function RegisterClient() {
         </Paper>
       </Box>
 
-      <Snackbar open={status.success} autoHideDuration={3000}>
-        <Alert severity="success" variant="filled" sx={{ borderRadius: '12px', fontWeight: 700 }}>
-          O parceiro comercial foi registrado com sucesso!
+      <Snackbar 
+        open={status.success} 
+        autoHideDuration={3000} 
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert variant="filled" severity="success" sx={{ borderRadius: '12px', fontWeight: 700, bgcolor: '#10B981' }}>
+          Parceiro registrado com sucesso!
         </Alert>
       </Snackbar>
     </AppLayout>

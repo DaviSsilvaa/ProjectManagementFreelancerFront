@@ -26,6 +26,10 @@ import {
   CheckCircle as DoneIcon,
   PlayCircle as ProgressIcon,
 } from "@mui/icons-material";
+import { Alert, Snackbar } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
+import { Person, Email, Phone, Business, Notes, Close } from "@mui/icons-material";
+import { InputAdornment, IconButton } from "@mui/material";
 import AppLayout from "../layout/AppLayout";
 
 const stringToColor = (string) => {
@@ -49,7 +53,6 @@ const getInitials = (name) => {
   return (names[0][0] + names[names.length - 1][0]).toUpperCase();
 };
 
-// Função para estilizar os Status
 const getStatusStyles = (status) => {
   switch (status?.toUpperCase()) {
     case "COMPLETED":
@@ -95,6 +98,9 @@ const getStatusStyles = (status) => {
 function ClientDetail() {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", company: "" });
   const { id } = useParams();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -135,6 +141,40 @@ function ClientDetail() {
     }
   };
 
+  const handleUpdateClient = async () => {
+  try {
+    const response = await api.put(`/clients/${id}`, editForm);
+    setClient({ ...client, ...response.data });
+    setOpenEdit(false);
+    
+    setSnackbar({
+      open: true,
+      message: "Dados do parceiro atualizados com sucesso!",
+      severity: "success"
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar cliente:", error);
+    setSnackbar({
+      open: true,
+      message: "Erro ao atualizar. Verifique sua conexão.",
+      severity: "error"
+    });
+  }
+};
+
+const handleOpenEdit = () => {
+  setEditForm({
+    name: client.name || "",
+    email: client.email || "",
+    phone: client.phone || "",
+    company: client.company || "",
+    notes: client.notes || "",
+  });
+  setOpenEdit(true);
+};
+
+const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
   const totalFaturado =
     client?.Projects?.reduce(
       (acc, proj) => acc + (Number(proj.budget) || 0),
@@ -170,16 +210,13 @@ function ClientDetail() {
             Voltar
           </Button>
           <Button
-            variant="outlined"
-            color="primary"
-            sx={{
-              borderRadius: "10px",
-              textTransform: "none",
-              fontWeight: 700,
-            }}
-          >
-            Editar Perfil
-          </Button>
+  variant="outlined"
+  color="primary"
+  onClick={handleOpenEdit}
+  sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700 }}
+>
+  Editar Perfil
+</Button>
         </Box>
 
         <Grid container spacing={3}>
@@ -356,7 +393,7 @@ function ClientDetail() {
                 <Stack spacing={2}>
                   {client?.Projects?.length > 0 ? (
                     client.Projects.map((project) => {
-                      const isCancelled = project.status === "CANCELLED"; // Identifica se está cancelado
+                      const isCancelled = project.status === "CANCELLED";
 
                       return (
                         <Box
@@ -369,8 +406,7 @@ function ClientDetail() {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                            // ESTILIZAÇÃO PARA NÃO SUMIR:
-                            opacity: isCancelled ? 0.7 : 1, // Fica levemente transparente
+                            opacity: isCancelled ? 0.7 : 1,
                             transition: "all 0.3s ease",
                           }}
                         >
@@ -379,10 +415,10 @@ function ClientDetail() {
                               variant="subtitle1"
                               sx={{
                                 fontWeight: 800,
-                                color: isCancelled ? "#94A3B8" : "#1E293B", // Muda a cor se cancelado
+                                color: isCancelled ? "#94A3B8" : "#1E293B",
                                 textDecoration: isCancelled
                                   ? "line-through"
-                                  : "none", // Risca o nome
+                                  : "none",
                               }}
                             >
                               {project.title} {isCancelled && "(CANCELADO)"}
@@ -397,25 +433,60 @@ function ClientDetail() {
 
                           <FormControl size="small" sx={{ minWidth: 160 }}>
                             <FormControl size="small" sx={{ minWidth: 180 }}>
-  <Select
-    value={(project.status || "PENDING").toUpperCase()} 
-    onChange={(e) => handleStatusChange(project.id, e.target.value)}
-    sx={{
-      borderRadius: "12px",
-      fontSize: "0.75rem",
-      fontWeight: 800,
-      bgcolor: getStatusStyles(project.status).bg,
-      color: getStatusStyles(project.status).color,
-      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-    }}
-  >
-    <MenuItem value="PENDING" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Pendente</MenuItem>
-    <MenuItem value="IN_NEGOTIATION" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Em Negociação</MenuItem>
-    <MenuItem value="IN_PROGRESS" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Em Desenvolvimento</MenuItem>
-    <MenuItem value="COMPLETED" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Finalizado</MenuItem>
-    <MenuItem value="CANCELLED" sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#EF4444' }}>Cancelado</MenuItem>
-  </Select>
-</FormControl>
+                              <Select
+                                value={(
+                                  project.status || "PENDING"
+                                ).toUpperCase()}
+                                onChange={(e) =>
+                                  handleStatusChange(project.id, e.target.value)
+                                }
+                                sx={{
+                                  borderRadius: "12px",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 800,
+                                  bgcolor: getStatusStyles(project.status).bg,
+                                  color: getStatusStyles(project.status).color,
+                                  "& .MuiOutlinedInput-notchedOutline": {
+                                    border: "none",
+                                  },
+                                }}
+                              >
+                                <MenuItem
+                                  value="PENDING"
+                                  sx={{ fontSize: "0.8rem", fontWeight: 600 }}
+                                >
+                                  Pendente
+                                </MenuItem>
+                                <MenuItem
+                                  value="IN_NEGOTIATION"
+                                  sx={{ fontSize: "0.8rem", fontWeight: 600 }}
+                                >
+                                  Em Negociação
+                                </MenuItem>
+                                <MenuItem
+                                  value="IN_PROGRESS"
+                                  sx={{ fontSize: "0.8rem", fontWeight: 600 }}
+                                >
+                                  Em Desenvolvimento
+                                </MenuItem>
+                                <MenuItem
+                                  value="COMPLETED"
+                                  sx={{ fontSize: "0.8rem", fontWeight: 600 }}
+                                >
+                                  Finalizado
+                                </MenuItem>
+                                <MenuItem
+                                  value="CANCELLED"
+                                  sx={{
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                    color: "#EF4444",
+                                  }}
+                                >
+                                  Cancelado
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
                           </FormControl>
                         </Box>
                       );
@@ -464,6 +535,138 @@ function ClientDetail() {
           </Grid>
         </Grid>
       </Box>
+
+      <Snackbar 
+  open={snackbar.open} 
+  autoHideDuration={4000} 
+  onClose={handleCloseSnackbar}
+  anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+>
+  <Alert 
+    onClose={handleCloseSnackbar} 
+    severity={snackbar.severity} 
+    variant="contained"
+    sx={{ width: '100%', borderRadius: '12px', fontWeight: 600, backgroundColor: '#10B981', color: '#FFFFFF' }}
+  >
+    {snackbar.message}
+  </Alert>
+</Snackbar>
+      <Dialog 
+  open={openEdit} 
+  onClose={() => setOpenEdit(false)} 
+  fullWidth 
+  maxWidth="sm"
+  PaperProps={{
+    sx: { borderRadius: "20px", padding: 1 }
+  }}
+>
+  <DialogTitle sx={{ 
+    fontWeight: 900, 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    color: "#1E293B"
+  }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Avatar sx={{ bgcolor: '#EEF2FF', color: '#4F46E5' }}>
+        <Person />
+      </Avatar>
+      Editar Perfil do Parceiro
+    </Box>
+    <IconButton onClick={() => setOpenEdit(false)} size="small">
+      <Close />
+    </IconButton>
+  </DialogTitle>
+
+  <DialogContent dividers sx={{ borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+    <Stack spacing={2.5} sx={{ mt: 2 }}>
+      <TextField
+        label="Nome Completo"
+        fullWidth
+        value={editForm.name}
+        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+        InputProps={{
+          startAdornment: <InputAdornment position="start"><Person sx={{ color: '#94A3B8' }}/></InputAdornment>,
+        }}
+        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+      />
+      
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="E-mail"
+            fullWidth
+            value={editForm.email}
+            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><Email sx={{ color: '#94A3B8' }}/></InputAdornment>,
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Telefone"
+            fullWidth
+            value={editForm.phone}
+            onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><Phone sx={{ color: '#94A3B8' }}/></InputAdornment>,
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+          />
+        </Grid>
+      </Grid>
+
+      <TextField
+        label="Empresa/Organização"
+        fullWidth
+        value={editForm.company}
+        onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+        InputProps={{
+          startAdornment: <InputAdornment position="start"><Business sx={{ color: '#94A3B8' }}/></InputAdornment>,
+        }}
+        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+      />
+      
+      <TextField
+        label="Observações Estratégicas"
+        fullWidth
+        multiline
+        rows={3}
+        value={editForm.notes}
+        onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+        placeholder="Adicione detalhes sobre o perfil deste cliente..."
+        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+      />
+    </Stack>
+  </DialogContent>
+
+  <DialogActions sx={{ p: 3, gap: 1 }}>
+    <Button 
+      onClick={() => setOpenEdit(false)} 
+      sx={{ color: "#64748B", fontWeight: 700, textTransform: 'none' }}
+    >
+      Descartar
+    </Button>
+    <Button 
+      onClick={handleUpdateClient} 
+      variant="contained" 
+      elevation={0}
+      sx={{ 
+        borderRadius: "12px", 
+        bgcolor: "#4F46E5", 
+        px: 4, 
+        py: 1.2,
+        fontWeight: 700,
+        textTransform: 'none',
+        '&:hover': { bgcolor: '#4338CA', elevation: 2 }
+      }}
+    >
+      Salvar Alterações
+    </Button>
+  </DialogActions>
+</Dialog>
     </AppLayout>
   );
 }
